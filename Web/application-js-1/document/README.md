@@ -2,11 +2,17 @@
 
 - [JavaScript応用編1 - タイマーを作ってみる](#javascript応用編1---タイマーを作ってみる)
   - [0. 前提知識](#0-前提知識)
-    - [1. HTMLを作成する](#1-htmlを作成する)
+  - [1. HTMLを作成する](#1-htmlを作成する)
   - [2. JavaScriptでタイマーを動かしてみる](#2-javascriptでタイマーを動かしてみる)
     - [2-1. タイマーの時刻をHTML上に表示する](#2-1-タイマーの時刻をhtml上に表示する)
     - [2-2. タイマーをスタートし、時間を更新していく](#2-2-タイマーをスタートし時間を更新していく)
   - [App1. 上手く動かないときは](#app1-上手く動かないときは)
+  - [3. タイマーのStop機能を作ってみる](#3-タイマーのstop機能を作ってみる)
+    - [3-1. タイマーをストップする](#3-1-タイマーをストップする)
+    - [3-2. タイマーをリスタートする](#3-2-タイマーをリスタートする)
+  - [4. タイマーのReset機能を作ってみる](#4-タイマーのreset機能を作ってみる)
+  - [5. 仕上げのCSS](#5-仕上げのcss)
+  - [6. 完成！](#6-完成)
 
 
 ## 0. 前提知識
@@ -21,7 +27,8 @@ JavaScriptを始めとするWeb開発の入門について勉強するための�
 - **無名関数**：[JavaDriveの説明](https://www.javadrive.jp/javascript/function/index5.html)
 - **DOM**：[JavaDriveの説明](https://www.javadrive.jp/javascript/dom/index1.html)
 
-### 1. HTMLを作成する
+---
+## 1. HTMLを作成する
 HTMLファイルで記述する内容は、今回作成するストップウォッチを載せる土台になります。まずは図のように「index.html」を作成しましょう。
 
 ![index.htmlのディレクト構造](./img/01.PNG)
@@ -72,6 +79,7 @@ HTMLファイルの中には、head要素、body要素などの典型的なも�
 
 ![index.htmlの表示結果](./img/02.PNG)
 
+---
 ## 2. JavaScriptでタイマーを動かしてみる
 次は、実際にタイマーを動かしてみるところまで進めてみましょう。まず、JavaScriptのファイルをHTML内で読み込むために、script要素を記述しておきます。今回はhead要素の中で書きました。
 
@@ -191,10 +199,314 @@ function OnStartButtonClick() {
 
 **msecToSecString関数**では、getTime関数で取得できる値がミリ秒の単位なので、それをまずは秒の単位に直し、その秒から分も求めています。後半、secondStrとminutesStrを宣言している箇所では、**三項演算子**と言うもので条件分岐をしています。秒数/分が10未満だと1桁になってしまうので、そのときは02秒のように0を付与し、10未満じゃないなら何も付与しない、という処理を書いています。```String(seconds)```は**数値型からString型へのキャスト(型変換)です**。三項演算子とかキャストとかが分からなければ、都度調べて見てください。最後に、この秒数と分の文字列をくっ付けて戻り値で返しています。
 
+ここまで書けたら、ブラウザを更新して、スタートボタンを押してみてください。そうすると画像のように表示時間がどんどんとカウントアップされていくようになったでしょうか。ただ、まだこのタイマー止めたりリセットしたりできません。次からはこのストップとリセットの処理を書いていきます。
 
+![タイマーのスタート](./img/07.PNG)
+
+---
 ## App1. 上手く動かないときは
 プログラムが上手く動かないときは、エラーログを見てみたり、途中の変数の値を見てみるのがプログラミングの定石ですね。JSのプログラミングではブラウザの開発者ツールを使用してデバッグをすることが多いです。開発者ツールはブラウザ上でF12キーを押すか、右クリック=>検証とクリックして開くことができます。開くと、下図のように「要素」や「コンソール」の選択ができ、このうちのコンソールにJSのエラーログなどが表示されます。
 
 ![開発者ツール](./img/06.PNG)
 
 他にも、プログラム中である変数の値がどうなっているか見たい時などは、```console.log([出力したい文字列や変数]);```と記述することで、任意の内容をコンソールに出力することができます。これをデバッグの用途で使うことが多々あります。
+
+---
+## 3. タイマーのStop機能を作ってみる
+ここら辺からは、言語の仕様というよりも、どのようにプログラムを組むかのアルゴリズムの色が強くなってきて、コードを見て流れを理解して貰う方が手っ取り早いこともあるかもしれません。個人的には文字の説明よりコード追った方が理解しやすいのです。その辺は皆さんにあった方法でチャレンジしてみてください。
+
+タイマーのストップ機能でしたいことは次のようなことです。
+
+- タイマーの時間カウントを止める
+- もう一度スタートを押すと、途中からタイマーのカウントアップを再開する
+
+それでは次のような事を書いていきましょう。省略しているところは、特段の追記が無い箇所です。
+
+```js
+// タイマーの時間を表示する場所を覚えておく変数
+let timerStringDOM;
+
+// 開始時間を記録しておく変数
+let startTime;
+
+// タイマーを識別するID
+let timerId = null;
+
+// 現在の経過時間を記録しておく変数
+let currentTimerTime = 0;
+
+// ここに記述したイベントは、htmlが完全に読み込まれた後から実行される。
+window.onload = function() {
+  /// 省略 ///
+};
+
+// ミリ秒を経過時間の文字列に直す関数
+function msecToSecString(time) {
+  /// 省略 ///
+}
+
+// タイマーの時刻を更新する処理
+function UpdateTimer() {
+  /// 省略 ///
+}
+
+// スタートボタンが押されたときの処理
+function OnStartButtonClick() {
+  // すでにタイマーが動いていないことを確認する
+  if(timerId == null) {
+    // 変数startTimeに開始時間を所持しておく
+    // 現在の時間は、基準時からの経過時間(単位：ミリ秒)
+    startTime = new Date().getTime() - currentTimerTime;
+
+    // 1秒(=1000ミリ秒)ごとにタイマーを更新する処理を記述する
+    timerId = setInterval(UpdateTimer, 1000);
+  }
+}
+
+// ストップボタンが押されたときの処理
+function OnStopButtonClick() {
+  // すでにタイマーが動いていることを確認する
+  if(timerId != null) {
+    // タイマーIDで指定したタイマーをストップする
+    clearInterval(timerId);
+    timerId = null;
+
+    // 現在までの経過時間を記録してタイマーの表示を更新
+    const nowTime = new Date().getTime();
+    currentTimerTime = nowTime - startTime;
+
+    timerStringDOM.innerHTML = msecToSecString(currentTimerTime);
+  }
+}
+```
+
+### 3-1. タイマーをストップする
+まずは、動いているタイマーを止める処理を書いていきます。HTMLに記述した内容から、ストップボタンを押すと```OnStopButtonClick関数```が呼ばれましたので、その関数の中に処理を書いていきましょう。
+
+その前に、そもそもタイマーは、```setInterval関数```で**定期的に関数を呼び出す設定をする**ことで、毎秒更新されていましたね。ですのでタイマーを止めるときは、この**定期的に関数を呼び出す設定を解除する**必要がでてきます。
+
+実装上では、変数timerIdにその定期実行の設定をしたID（設定を識別するもの）を保持しています。このIDは```setInterval関数```の戻り値として取得することができ、```OnStartButtonClick関数```の中で定期実行を設定する際に取得しています。定期実行を解除するときは、```clearInterval関数```に解除したい定期実行のIDを引数として渡してやることで、その定期実行の設定が解除されます。
+
+また、何度もスタートボタンをクリックしたときに、いくつも定期実行を設定してしまわないように、変数timerIdがnull（からっぽでまだ何も代入されていない状態）のときだけsetInterval関数で定期実行を設定するように、```OnStartButtonClick関数```の中で条件分岐を追記しています。
+
+同様に、タイマーが動いてもいない時にタイマーをストップしようとすることが無いように、```OnStopButtonClick関数```で、timerIdがnullでない時だけタイマーを止めるように書き、またタイマーを止めたら改めてtimerIdをnullに設定しています。
+
+### 3-2. タイマーをリスタートする
+タイマーを後々リスタートするには、**タイマーをストップした時点までの経過時間を覚えておく**必要がありますね。リスタート時には、その途中の時間から、再度カウントを開始したいからです。そこで、変数currentTimerTimeに、ストップ時の経過時間を記録しておきます。ついでに、そのストップ時の時間でタイマーの表示時刻も更新しておきます。
+
+リスタート時には、その途中経過の時間currentTimerTimeの分だけスタート時間に下駄を履かせてやれば、途中経過までの時間分遅くしたスタート時間が設定できますね。これを```OnStartButtonClick関数```の中の```startTime = new Date().getTime() - currentTimerTime;```で記載しています。
+
+ここまで書くと、タイマーのストップボタンを押すことで、タイマーを一時停止させたり、タイマーをリスタートさせたりができるようになっているかと思います。最後に、タイマーの表示時刻をリセットする処理を作っていきましょう。
+
+---
+## 4. タイマーのReset機能を作ってみる
+最後、タイマーのリセットは単純です。要は、タイマーをスタートする以前の状態に戻せばオッケーです。リセット時にしたいことは、まずタイマーをストップしてあげて、表示時間を00:00に戻してあげて、現在までの経過時間を0にするといったことですね。タイマーのストップは前項で作った```OnStopButtonClick関数```を呼び出してあげることでできます。後は諸々の変数を初期値に戻してあげればおっけーです。
+
+実装のコードは単純に、以下のようになります。
+
+```js
+/// 省略 ///
+
+// ストップボタンが押されたときの処理
+function OnStopButtonClick() {
+  /// 省略 ///
+}
+
+// リセットボタンが押されたときの処理
+function OnResetButtonClick() {
+  // 一度タイマーを止める
+  OnStopButtonClick();
+
+  // 表示時間を00:00にする
+  timerStringDOM.innerHTML = '00:00';
+
+  // 経過時間をリセット
+  currentTimerTime = 0;
+}
+```
+
+---
+## 5. 仕上げのCSS
+最後は見た目を良い感じにしていくために、CSSでちょっと飾り付けをしていきます。CSSの装飾は、ホントにいくらでもいじれる底なし沼です。ある程度で終わりにしないと、時間が溶けますのでご注意ください。CSSを追加するためにディレクトリでCSSファイルを作成し、index.htmlにはheadの中に以下のように書いておきます。
+
+```html
+<head>
+  <meta charset="UTF-8">
+  <title>Myタイマー</title>
+  <script src="./js/clock.js"></script>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+```
+
+![CSSファイルの作成](./img/08.PNG)
+
+ここら辺はホントに個人の感覚なのですが、まずは右揃えが不格好なので、全体を中央揃えにしておきましょう。style.cssに以下のように記述してください。
+
+```css
+body {
+  text-align: center;
+}
+```
+
+あとは、タイマーの文字表記がもう少し大きい方が見やすいので、文字サイズも大きくしておきましょうか。
+
+```css
+#timerString {
+  font-size: 3em;
+}
+```
+
+ここまでやるとこんな感じで、ブラウザ表示されるようになったかと思います。良い感じですね！(主観)
+
+![CSSを設定したページ](./img/09.PNG)
+
+---
+## 6. 完成！
+ひとまずこれで完成です。各ファイルの最終的な内容は以下に記載しておくので、上手く動いていないときは、どこが間違っているのか確認してみてください。
+
+<details><summary>index.html</summary>
+
+```html
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <title>Myタイマー</title>
+    <script src="./js/clock.js"></script>
+    <link rel="stylesheet" href="./css/style.css">
+  </head>
+
+  <body>
+    <h1>オリジナルタイマー！</h1>
+
+    <!-- この中にタイマーを書いていきます。 -->
+    <div id="timerApp">
+      <!-- タイマーの時間を表示する場所
+           具体的な中身は、後からJSで生成していく -->
+      <p id="timerString"></p>
+
+      <!-- タイマーをスタート/ストップ/リセット
+            するボタンを置く場所 -->
+      <div id="timerButton">
+        <!-- onClick=" ~~~ "と言うところで、
+              ボタンを押したときに呼ばれる関数を指定する -->
+        <input type="button" value="スタート" onClick="OnStartButtonClick();">
+        <input type="button" value="ストップ" onClick="OnStopButtonClick();">
+        <input type="button" value="リセット" onClick="OnResetButtonClick();">
+      </div>
+    </div>
+
+  </body>
+</html>
+```
+
+</details>
+
+<details><summary>js/clock.js</summary>
+
+```js
+// タイマーの時間を表示する場所を覚えておく変数
+let timerStringDOM;
+
+// 開始時間を記録しておく変数
+let startTime;
+
+// タイマーを識別するID
+let timerId = null;
+
+// 現在の経過時間を記録しておく変数
+let currentTimerTime = 0;
+
+// ここに記述したイベントは、htmlが完全に読み込まれた後から実行される。
+window.onload = function() {
+  timerStringDOM = document.getElementById('timerString');
+
+  // 開始する前は00:00と表示
+  timerStringDOM.innerHTML = '00:00'
+};
+
+// ミリ秒を経過時間の文字列に直す関数
+function msecToSecString(time) {
+  // 単位をミリ秒から秒へ変換
+  time = Math.floor(time / 1000);
+
+  // 秒数
+  const seconds = time % 60;
+  // 分数
+  const minutes = Math.floor(time / 60);
+
+  // 取得した数値をも2桁の文字列になるように、必要に応じて0を補う
+  const secondStr = (seconds < 10 ? '0' : '') + String(seconds);
+  const minutesStr = (minutes < 10 ? '0' : '') + String(minutes);
+
+  return minutesStr + ":" + secondStr;
+}
+
+// タイマーの時刻を更新する処理
+function UpdateTimer() {
+  // 現在の時刻を取得
+  const nowTime = new Date().getTime();
+
+  // タイマーの表示を更新
+  timerStringDOM.innerHTML = msecToSecString(nowTime - startTime);
+}
+
+// スタートボタンが押されたときの処理
+function OnStartButtonClick() {
+  // すでにタイマーが動いていないことを確認する
+  if(timerId == null) {
+    // 変数startTimeに開始時間を所持しておく
+    // 現在の時間は、基準時からの経過時間(単位：ミリ秒)
+    startTime = new Date().getTime() - currentTimerTime;
+
+    // 1秒(=1000ミリ秒)ごとにタイマーを更新する処理を記述する
+    timerId = setInterval(UpdateTimer, 1000);
+  }
+}
+
+// ストップボタンが押されたときの処理
+function OnStopButtonClick() {
+  // すでにタイマーが動いていることを確認する
+  if(timerId != null) {
+    // タイマーIDで指定したタイマーをストップする
+    clearInterval(timerId);
+    timerId = null;
+
+    // 現在までの経過時間を記録してタイマーの表示を更新
+    const nowTime = new Date().getTime();
+    currentTimerTime = nowTime - startTime;
+
+    timerStringDOM.innerHTML = msecToSecString(currentTimerTime);
+  }
+}
+
+// リセットボタンが押されたときの処理
+function OnResetButtonClick() {
+  // 一度タイマーを止める
+  OnStopButtonClick();
+
+  // 表示時間を00:00にする
+  timerStringDOM.innerHTML = '00:00';
+
+  // 経過時間をリセット
+  currentTimerTime = 0;
+}
+```
+
+</details>
+
+<details><summary>css/style.css</summary>
+
+```css
+body {
+  text-align: center;
+}
+
+#timerString {
+  font-size: 3em;
+}
+```
+
+</details>
+
+この記事ではWeb開発入門の足掛かりとして、DOM操作を用いたタイマーを開発してみました。実際の制作の中ではライブラリを使うのでDOMをいじることは少ないのですが、Webの入門として、また1つの武器として使っていけるかなと思います。
