@@ -1,5 +1,5 @@
 // 開始時間を記録しておく変数
-let startTime = null;
+let startTime;
 
 // タイマーの時間を表示する場所を覚えておく変数
 let timerStringDOM;
@@ -46,20 +46,20 @@ function UpdateTimer() {
 
 // スタートボタンが押されたときの処理
 function OnStartButtonClick() {
-  // もしstartTimeの中身が空だったら、変数startTimeに開始時間を所持しておく
-  // 現在の時間は、基準時からの経過時間(単位：ミリ秒)
-  if(startTime == null) {
-    startTime = new Date().getTime() - currentTimerTime;
-  }
-
-  // 1秒(=1000ミリ秒)ごとにタイマーを更新する処理を記述する
+  // すでにタイマーが動いていないことを確認する
   if(timerId == null) {
+    // 変数startTimeに開始時間を所持しておく
+    // 現在の時間は、基準時からの経過時間(単位：ミリ秒)
+    startTime = new Date().getTime() - currentTimerTime;
+
+    // 1秒(=1000ミリ秒)ごとにタイマーを更新する処理を記述する
     timerId = setInterval(UpdateTimer, 1000);
   }
 }
 
 // ストップボタンが押されたときの処理
 function OnStopButtonClick() {
+  // すでにタイマーが動いていることを確認する
   if(timerId != null) {
     // タイマーIDで指定したタイマーをストップする
     clearInterval(timerId);
@@ -70,9 +70,6 @@ function OnStopButtonClick() {
     currentTimerTime = nowTime - startTime;
 
     timerStringDOM.innerHTML = msecToSecString(currentTimerTime);
-
-    // 開始時間をリセット
-    startTime = null;
   }
 }
 
@@ -80,9 +77,6 @@ function OnStopButtonClick() {
 function OnResetButtonClick() {
   // 一度タイマーを止める
   OnStopButtonClick();
-
-  // startTimeを空にする
-  startTime = null;
 
   // 表示時間を00:00にする
   timerStringDOM.innerHTML = '00:00';
