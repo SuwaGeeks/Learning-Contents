@@ -1,0 +1,32 @@
+<!-- 緯度・経度の入力画面 -->
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <title>Myお天気</title>
+    <link rel="stylesheet" href="./css/style.css">
+  </head>
+
+  <body>
+    <h1>お天気情報</h1>
+
+    <div id="selectPlace">
+      <p>緯度・経度を指定してください</p>
+      <form action="./weather.html" method="get">
+        <table align="center">
+          <tr>
+            <td align="right">緯度(角度を-90から90で指定)：</td>
+            <td><input type="text" name="lat"></td>
+          </tr>
+          <tr>
+            <td align="right">経度(角度を-180から180で指定)：</td>
+            <td><input type="text" name="lot"></td>
+          </tr>
+        </table>
+        <input type="submit" value="決定">
+      </form>
+      <button onclick="location.href='./top.html'">トップへ戻る</button>
+    </div>
+  </body>
+</html>
